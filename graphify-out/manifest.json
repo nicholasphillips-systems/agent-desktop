@@ -1,0 +1,128 @@
+{
+  "bin/agent-briefing": {
+    "mtime": 1791186681.4235864,
+    "seen": 1791188949.1945927,
+    "ast_hash": "0beaa3492b1a046372c22d2d193930eb",
+    "semantic_hash": ""
+  },
+  "bin/detect-agents": {
+    "mtime": 1791185251.9520493,
+    "seen": 1791188949.1945982,
+    "ast_hash": "0700066036cc49802b85b0d7fb7bf7d4",
+    "semantic_hash": ""
+  },
+  "bin/launch-ai": {
+    "mtime": 1791185664.2860887,
+    "seen": 1791188949.1946008,
+    "ast_hash": "cb5bc52b13d7da6568467599e752efbd",
+    "semantic_hash": ""
+  },
+  "install.sh": {
+    "mtime": 1791186897.4511788,
+    "seen": 1791188949.1946025,
+    "ast_hash": "54038c0838b25c2bc1dfbf9908c13780",
+    "semantic_hash": ""
+  },
+  "README.md": {
+    "mtime": 1791187615.9134748,
+    "seen": 1791188949.1946037,
+    "ast_hash": "aa6afdbfa678b42b23c18a7ba3c540bd",
+    "semantic_hash": ""
+  },
+  "docs/ARCHITECTURE.md": {
+    "mtime": 1791187686.6829963,
+    "seen": 1791188949.1946049,
+    "ast_hash": "82a691fdf6f8f79a9b2b26e60c483b22",
+    "semantic_hash": ""
+  },
+  "icons/svg/ai-aether.svg": {
+    "mtime": 1791185223.2198374,
+    "seen": 1791188949.1946058,
+    "ast_hash": "ccf6592cad24c972ba0be6b8299f4cce",
+    "semantic_hash": ""
+  },
+  "icons/svg/ai-antigravity.svg": {
+    "mtime": 1791185223.2198374,
+    "seen": 1791188949.1946068,
+    "ast_hash": "789f3e7899d3a4ef1970ffef87e742b7",
+    "semantic_hash": ""
+  },
+  "icons/svg/ai-browser-use.svg": {
+    "mtime": 1791185223.2198374,
+    "seen": 1791188949.194608,
+    "ast_hash": "78a3d6053f8aadccf4380340ac73251e",
+    "semantic_hash": ""
+  },
+  "icons/svg/ai-claude.svg": {
+    "mtime": 1791185223.2198374,
+    "seen": 1791188949.194609,
+    "ast_hash": "f6f4ae74e6e6a875e390ab252d883f6d",
+    "semantic_hash": ""
+  },
+  "icons/svg/ai-cline.svg": {
+    "mtime": 1791185223.2198374,
+    "seen": 1791188949.1946099,
+    "ast_hash": "93cb71c32393276bcd1eddd0fa6dbec3",
+    "semantic_hash": ""
+  },
+  "icons/svg/ai-codex.svg": {
+    "mtime": 1791185223.2198374,
+    "seen": 1791188949.1946113,
+    "ast_hash": "2365a3ae508120a4a4488250cfa32918",
+    "semantic_hash": ""
+  },
+  "icons/svg/ai-cursor.svg": {
+    "mtime": 1791185223.2198374,
+    "seen": 1791188949.1946123,
+    "ast_hash": "1ae4b9d4c60bd7ef735169be46000274",
+    "semantic_hash": ""
+  },
+  "icons/svg/ai-devin.svg": {
+    "mtime": 1791185223.2198374,
+    "seen": 1791188949.1946132,
+    "ast_hash": "82ae489c2c5a28109d08b0173e69b550",
+    "semantic_hash": ""
+  },
+  "icons/svg/ai-gemini.svg": {
+    "mtime": 1791185223.2198374,
+    "seen": 1791188949.1946142,
+    "ast_hash": "d6410deaaa9e822dec08dd0c3f1729fb",
+    "semantic_hash": ""
+  },
+  "icons/svg/ai-hermes.svg": {
+    "mtime": 1791185223.2198374,
+    "seen": 1791188949.1946151,
+    "ast_hash": "aae47e6d47c0105b0c40ad9403afaa98",
+    "semantic_hash": ""
+  },
+  "icons/svg/ai-kilo.svg": {
+    "mtime": 1791185223.2198374,
+    "seen": 1791188949.194616,
+    "ast_hash": "083ba05abd162f38aef4577e003ec17b",
+    "semantic_hash": ""
+  },
+  "icons/svg/ai-openclaw.svg": {
+    "mtime": 1791185223.2198374,
+    "seen": 1791188949.194617,
+    "ast_hash": "670c6c7a3ad6da561f9f28a13ee173ef",
+    "semantic_hash": ""
+  },
+  "icons/svg/ai-opencode.svg": {
+    "mtime": 1791185223.2198374,
+    "seen": 1791188949.1946182,
+    "ast_hash": "aa0e5b1272c029c402f58039f55b6be9",
+    "semantic_hash": ""
+  },
+  "icons/svg/ai-oracle.svg": {
+    "mtime": 1791185223.2198374,
+    "seen": 1791188949.1946192,
+    "ast_hash": "8697f416e1c5d22f2873f93e274757d7",
+    "semantic_hash": ""
+  },
+  "icons/svg/ai-qwen.svg": {
+    "mtime": 1791185223.2198374,
+    "seen": 1791188949.1946201,
+    "ast_hash": "260beb83b7a8af15c8c759643f053310",
+    "semantic_hash": ""
+  }
+}
