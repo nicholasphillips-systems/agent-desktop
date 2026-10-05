@@ -1,0 +1,264 @@
+#!/usr/bin/env bash
+# launch-ai — Universal portable launcher for AI agents.
+# Refreshes live linear context, coordinates multi-agent state, and launches in dedicated sessions.
+set -euo pipefail
+
+WORKSPACE="${WORKSPACE:-$HOME}"
+BRIEFING_BIN="${BRIEFING_BIN:-$HOME/.local/bin/agent-briefing}"
+AGENT="${1:-}"
+IN_TERMINAL=0
+
+if [ -z "$AGENT" ]; then
+  echo "Usage: launch-ai <agent-id> [--in-terminal]"
+  exit 1
+fi
+
+if [[ "${2:-}" == "--in-terminal" || "${3:-}" == "--in-terminal" ]]; then
+  IN_TERMINAL=1
+fi
+
+# Detect terminal emulator
+detect_terminal() {
+  if command -v konsole >/dev/null 2>&1; then
+    echo "konsole"
+  elif command -v alacritty >/dev/null 2>&1; then
+    echo "alacritty"
+  elif command -v kitty >/dev/null 2>&1; then
+    echo "kitty"
+  elif command -v gnome-terminal >/dev/null 2>&1; then
+    echo "gnome-terminal"
+  elif command -v xfce4-terminal >/dev/null 2>&1; then
+    echo "xfce4-terminal"
+  elif command -v foot >/dev/null 2>&1; then
+    echo "foot"
+  elif command -v ptyxis >/dev/null 2>&1; then
+    echo "ptyxis"
+  elif command -v xterm >/dev/null 2>&1; then
+    echo "xterm"
+  else
+    echo "x-terminal-emulator"
+  fi
+}
+
+TERM_EMU="$(detect_terminal)"
+
+case "$AGENT" in
+  claude)
+    TITLE="Claude Code"
+    IS_GUI=0
+    ;;
+  codex)
+    TITLE="OpenAI Codex"
+    IS_GUI=0
+    ;;
+  gemini)
+    TITLE="Google Gemini"
+    IS_GUI=0
+    ;;
+  hermes-desktop)
+    TITLE="Hermes Desktop"
+    IS_GUI=1
+    ;;
+  hermes|hermes-cli)
+    TITLE="Hermes Agent TUI"
+    IS_GUI=0
+    ;;
+  devin-desktop)
+    TITLE="Devin Desktop"
+    IS_GUI=1
+    ;;
+  devin|devin-cli)
+    TITLE="Devin CLI"
+    IS_GUI=0
+    ;;
+  opencode)
+    TITLE="OpenCode"
+    IS_GUI=0
+    ;;
+  qwen)
+    TITLE="Qwen Code"
+    IS_GUI=0
+    ;;
+  kilo)
+    TITLE="Kilo"
+    IS_GUI=0
+    ;;
+  cursor)
+    TITLE="Cursor IDE"
+    IS_GUI=1
+    ;;
+  openclaw)
+    TITLE="OpenClaw VM"
+    IS_GUI=0
+    ;;
+  openclaw-ui)
+    TITLE="OpenClaw Control UI"
+    IS_GUI=1
+    ;;
+  oracle)
+    TITLE="Oracle VPS LLM"
+    IS_GUI=0
+    ;;
+  antigravity)
+    TITLE="Antigravity"
+    IS_GUI=1
+    ;;
+  cline)
+    TITLE="Cline"
+    IS_GUI=0
+    ;;
+  aether)
+    TITLE="Aether"
+    IS_GUI=0
+    ;;
+  browser-use)
+    TITLE="Browser Use"
+    IS_GUI=0
+    ;;
+  *)
+    TITLE="$AGENT"
+    IS_GUI=0
+    ;;
+esac
+
+# Update live context
+if [ -x "$BRIEFING_BIN" ]; then
+  if [ "$IS_GUI" -eq 1 ]; then
+    "$BRIEFING_BIN" --quiet "$TITLE" 2>/dev/null || true
+  fi
+fi
+
+# Launch in terminal if not yet inside one
+if [ "$IS_GUI" -eq 0 ] && [ "$IN_TERMINAL" -eq 0 ]; then
+  case "$TERM_EMU" in
+    konsole)
+      exec konsole --workdir "$WORKSPACE" -p tabtitle="$TITLE" -e "$0" "$AGENT" --in-terminal
+      ;;
+    gnome-terminal)
+      exec gnome-terminal --working-directory="$WORKSPACE" --title="$TITLE" -- "$0" "$AGENT" --in-terminal
+      ;;
+    alacritty)
+      exec alacritty --working-directory "$WORKSPACE" --title "$TITLE" -e "$0" "$AGENT" --in-terminal
+      ;;
+    kitty)
+      exec kitty --directory "$WORKSPACE" --title "$TITLE" "$0" "$AGENT" --in-terminal
+      ;;
+    xfce4-terminal)
+      exec xfce4-terminal --working-directory="$WORKSPACE" --title="$TITLE" -x "$0" "$AGENT" --in-terminal
+      ;;
+    *)
+      exec "$TERM_EMU" -e "$0" "$AGENT" --in-terminal
+      ;;
+  esac
+fi
+
+# Inside terminal / GUI runtime:
+cd "$WORKSPACE"
+
+run_briefing() {
+  if [ -x "$BRIEFING_BIN" ]; then
+    "$BRIEFING_BIN" "$TITLE"
+    sleep 0.8
+  fi
+}
+
+case "$AGENT" in
+  claude)
+    run_briefing
+    exec claude
+    ;;
+  codex)
+    run_briefing
+    exec codex
+    ;;
+  gemini)
+    run_briefing
+    exec gemini
+    ;;
+  hermes-desktop)
+    if command -v hermes-primary-desktop >/dev/null 2>&1; then
+      exec hermes-primary-desktop
+    elif command -v hermes >/dev/null 2>&1; then
+      exec hermes desktop --cwd "$WORKSPACE"
+    fi
+    ;;
+  hermes|hermes-cli)
+    run_briefing
+    exec hermes --tui --in "$WORKSPACE"
+    ;;
+  devin-desktop)
+    if [ -x "$HOME/Applications/Devin/devin-desktop" ]; then
+      exec "$HOME/Applications/Devin/devin-desktop" "$WORKSPACE"
+    else
+      exec devin-desktop "$WORKSPACE"
+    fi
+    ;;
+  devin|devin-cli)
+    run_briefing
+    exec devin "$WORKSPACE"
+    ;;
+  opencode)
+    run_briefing
+    exec opencode "$WORKSPACE"
+    ;;
+  qwen)
+    run_briefing
+    exec qwen
+    ;;
+  kilo)
+    run_briefing
+    exec kilo "$WORKSPACE"
+    ;;
+  cursor)
+    exec cursor "$WORKSPACE"
+    ;;
+  openclaw)
+    run_briefing
+    if [ -x "$HOME/.local/bin/claw" ]; then
+      exec "$HOME/.local/bin/claw"
+    else
+      exec openclaw terminal
+    fi
+    ;;
+  openclaw-ui)
+    if [ -x "$HOME/.local/bin/claw-ui" ]; then
+      exec "$HOME/.local/bin/claw-ui"
+    else
+      exec xdg-open "http://localhost:18789"
+    fi
+    ;;
+  oracle)
+    run_briefing
+    echo -e "\033[1;33m⚠️ Notice: The VPS is currently disabled (permanently until models are rehoused).\033[0m"
+    echo -e "Oracle (VPS LLM) is offline. Press Enter to exit..."
+    read -r
+    exit 0
+    ;;
+  antigravity)
+    if [ -x "$HOME/Applications/Antigravity-x64/antigravity" ]; then
+      exec "$HOME/Applications/Antigravity-x64/antigravity"
+    else
+      exec antigravity
+    fi
+    ;;
+  cline)
+    run_briefing
+    exec cline -i -c "$WORKSPACE"
+    ;;
+  aether)
+    run_briefing
+    exec aether --cwd "$WORKSPACE"
+    ;;
+  browser-use)
+    run_briefing
+    if command -v browser-use-tui >/dev/null 2>&1; then
+      exec browser-use-tui
+    else
+      exec browser-use
+    fi
+    ;;
+  *)
+    echo "Unknown agent: $AGENT" >&2
+    exit 1
+    ;;
+esac

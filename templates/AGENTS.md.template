@@ -1,0 +1,38 @@
+# Rules for Every AI Agent in this Workspace
+
+Read this first before executing any tasks.
+
+## 1. Who You Are Working With
+- **User Role**: The user is the product owner / architect — the AI agents are the developers.
+- **Communication Style**: Plain words, short answers, zero fluff or sycophancy.
+- **Pacing**: One step at a time, then pause and wait for user confirmation.
+- **Finished Work Report**:
+  1. What changed
+  2. Where it is located
+  3. What is left to do
+- **Attribution Rule**: Never write an AI's name in filenames, commit messages, author tags, or script headers.
+
+## 2. Linear Continuity & Active Context
+- Live system state: Always read `~/ACTIVE_CONTEXT.md` before proposing changes.
+- It lists active task desks, master to-dos, and recent runs.
+- Continue work linearly from where the previous agent left off — never re-invent or discard valid work without reason.
+
+## 3. Multi-Agent Delegation & Awareness
+Different agents have distinct capabilities. Cooperate and recommend hand-offs when appropriate:
+- **Claude Code**: Complex software architecture, large refactors, full-stack systems, SVG design.
+- **OpenAI Codex**: High-precision backend logic, algorithmic scripts, automated testing.
+- **Google Gemini**: Massive context digestion, repo-wide audits, multi-document research.
+- **Hermes Agent**: Autonomous system execution, background workflows, desktop tool-calling.
+- **Devin**: End-to-end task solving, standalone project construction.
+- **OpenCode**: Flexible terminal AI coding with multi-provider model routing.
+- **Qwen Code**: High-efficiency coding, local model inference.
+- **Kilo**: Rapid terminal workflows, GUI control applications.
+- **Cursor IDE**: Visual multi-file code editing, in-editor diff review, live debugging.
+- **OpenClaw**: Sandboxed VM execution for untrusted network scraping and bots.
+- **Browser-Use**: Autonomous web navigation and form automation.
+- **Cline & Aether**: Autonomous CLI coding agents.
+
+## 4. Never
+- Delete or overwrite files without inspecting them first.
+- Push or force-push to main without approval.
+- Expose secrets or API keys.

@@ -1,0 +1,253 @@
+#!/usr/bin/env python3
+"""
+detect-agents — Scans the system for installed AI coding agents, models, and CLI runners.
+Returns structured JSON or human-readable report.
+"""
+
+import sys
+import os
+import shutil
+import json
+from pathlib import Path
+
+HOME = Path.home()
+
+SEARCH_PATHS = [
+    HOME / ".local" / "bin",
+    HOME / ".cargo" / "bin",
+    HOME / ".kilo" / "bin",
+    HOME / ".opencode" / "bin",
+    HOME / ".hermes" / "bin",
+    Path("/usr/local/bin"),
+    Path("/usr/bin"),
+    Path("/var/lib/snapd/snap/bin"),
+    Path("/opt"),
+    HOME / "Applications",
+    HOME / "opt",
+]
+
+# Add NVM node paths if present
+nvm_dir = HOME / ".nvm" / "versions" / "node"
+if nvm_dir.exists():
+    for node_ver in nvm_dir.iterdir():
+        bin_dir = node_ver / "bin"
+        if bin_dir.exists():
+            SEARCH_PATHS.append(bin_dir)
+
+KNOWN_AGENTS = {
+    "claude": {
+        "name": "Claude Code",
+        "vendor": "Anthropic",
+        "binaries": ["claude"],
+        "type": "cli",
+        "config_dirs": [HOME / ".claude", HOME / "CLAUDE.md"],
+        "icon": "ai-claude.svg"
+    },
+    "codex": {
+        "name": "OpenAI Codex",
+        "vendor": "OpenAI",
+        "binaries": ["codex"],
+        "type": "cli",
+        "config_dirs": [HOME / ".codex"],
+        "icon": "ai-codex.svg"
+    },
+    "gemini": {
+        "name": "Google Gemini",
+        "vendor": "Google",
+        "binaries": ["gemini"],
+        "type": "cli",
+        "config_dirs": [HOME / ".gemini", HOME / "GEMINI.md"],
+        "icon": "ai-gemini.svg"
+    },
+    "hermes-desktop": {
+        "name": "Hermes Desktop",
+        "vendor": "Nous Research",
+        "binaries": [
+            "hermes-primary-desktop",
+            HOME / ".hermes" / "hermes-agent" / "apps" / "desktop" / "release" / "linux-unpacked" / "Hermes"
+        ],
+        "type": "gui",
+        "config_dirs": [HOME / ".hermes"],
+        "icon": "ai-hermes.svg"
+    },
+    "hermes-cli": {
+        "name": "Hermes Agent CLI",
+        "vendor": "Nous Research",
+        "binaries": ["hermes", "hermes-agent"],
+        "type": "cli",
+        "config_dirs": [HOME / ".hermes"],
+        "icon": "ai-hermes.svg"
+    },
+    "devin-desktop": {
+        "name": "Devin Desktop",
+        "vendor": "Cognition",
+        "binaries": [HOME / "Applications" / "Devin" / "devin-desktop"],
+        "type": "gui",
+        "config_dirs": [HOME / ".devin"],
+        "icon": "ai-devin.svg"
+    },
+    "devin-cli": {
+        "name": "Devin CLI",
+        "vendor": "Cognition",
+        "binaries": ["devin"],
+        "type": "cli",
+        "config_dirs": [HOME / ".devin"],
+        "icon": "ai-devin.svg"
+    },
+    "opencode": {
+        "name": "OpenCode AI",
+        "vendor": "OpenCode",
+        "binaries": ["opencode"],
+        "type": "cli",
+        "config_dirs": [HOME / ".opencode"],
+        "icon": "ai-opencode.svg"
+    },
+    "qwen": {
+        "name": "Qwen Code",
+        "vendor": "Alibaba Cloud / Qwen",
+        "binaries": ["qwen"],
+        "type": "cli",
+        "config_dirs": [HOME / ".qwen"],
+        "icon": "ai-qwen.svg"
+    },
+    "kilo": {
+        "name": "Kilo Agent",
+        "vendor": "Kilo",
+        "binaries": ["kilo"],
+        "type": "cli",
+        "config_dirs": [HOME / ".kilo"],
+        "icon": "ai-kilo.svg"
+    },
+    "cursor": {
+        "name": "Cursor IDE",
+        "vendor": "Anysphere",
+        "binaries": ["cursor"],
+        "type": "gui",
+        "config_dirs": [HOME / ".cursor"],
+        "icon": "ai-cursor.svg"
+    },
+    "openclaw-vm": {
+        "name": "OpenClaw VM",
+        "vendor": "OpenClaw",
+        "binaries": ["claw", HOME / ".local" / "bin" / "claw"],
+        "type": "cli",
+        "config_dirs": [HOME / ".openclaw", HOME / ".config" / "openclaw-vm.env"],
+        "icon": "ai-openclaw.svg"
+    },
+    "openclaw-ui": {
+        "name": "OpenClaw Control UI",
+        "vendor": "OpenClaw",
+        "binaries": ["claw-ui", HOME / ".local" / "bin" / "claw-ui"],
+        "type": "gui",
+        "config_dirs": [HOME / ".openclaw"],
+        "icon": "ai-openclaw.svg"
+    },
+    "antigravity": {
+        "name": "Antigravity",
+        "vendor": "Antigravity",
+        "binaries": [HOME / "Applications" / "Antigravity-x64" / "antigravity"],
+        "type": "gui",
+        "config_dirs": [HOME / ".antigravity"],
+        "icon": "ai-antigravity.svg"
+    },
+    "cline": {
+        "name": "Cline Agent",
+        "vendor": "Cline",
+        "binaries": ["cline"],
+        "type": "cli",
+        "config_dirs": [HOME / ".cline"],
+        "icon": "ai-cline.svg"
+    },
+    "aether": {
+        "name": "Aether Agent",
+        "vendor": "Aether",
+        "binaries": ["aether"],
+        "type": "cli",
+        "config_dirs": [HOME / ".aetherrc"],
+        "icon": "ai-aether.svg"
+    },
+    "browser-use": {
+        "name": "Browser Use",
+        "vendor": "Browser Use",
+        "binaries": ["browser-use-tui", "browser-use", "browser"],
+        "type": "cli",
+        "config_dirs": [HOME / ".browser-use"],
+        "icon": "ai-browser-use.svg"
+    },
+    "ollama": {
+        "name": "Ollama Local LLM",
+        "vendor": "Ollama",
+        "binaries": ["ollama"],
+        "type": "cli",
+        "config_dirs": [HOME / ".ollama"],
+        "icon": "ai-oracle.svg"
+    }
+}
+
+def locate_binary(target):
+    if isinstance(target, Path):
+        if target.exists() and os.access(target, os.X_OK):
+            return str(target)
+        return None
+    # Check standard PATH
+    found = shutil.which(target)
+    if found:
+        return found
+    # Check search paths
+    for p in SEARCH_PATHS:
+        candidate = p / target
+        if candidate.exists() and os.access(candidate, os.X_OK):
+            return str(candidate)
+    return None
+
+def detect_all():
+    results = {}
+    for agent_id, info in KNOWN_AGENTS.items():
+        bin_path = None
+        for b in info["binaries"]:
+            bin_path = locate_binary(b)
+            if bin_path:
+                break
+        
+        has_config = any(p.exists() for p in info.get("config_dirs", []))
+        
+        installed = bin_path is not None or has_config
+        results[agent_id] = {
+            "name": info["name"],
+            "vendor": info["vendor"],
+            "type": info["type"],
+            "installed": installed,
+            "binary_path": bin_path,
+            "has_config": has_config,
+            "icon": info["icon"]
+        }
+    return results
+
+def main():
+    detected = detect_all()
+    if "--json" in sys.argv:
+        print(json.dumps(detected, indent=2))
+        return
+
+    print("=" * 72)
+    print("  AI AGENT & INSTANCE SCANNER (Local Detection)")
+    print("=" * 72)
+    print(f"{'Agent / Tool':<24} {'Type':<6} {'Status':<12} {'Binary Location'}")
+    print("-" * 72)
+    
+    installed_count = 0
+    for agent_id, data in detected.items():
+        status = "INSTALLED" if data["installed"] else "NOT FOUND"
+        color = "\033[32m" if data["installed"] else "\033[2m"
+        reset = "\033[0m"
+        path = data["binary_path"] or "(config only)" if data["installed"] else "-"
+        print(f"{data['name']:<24} {data['type'].upper():<6} {color}{status:<12}{reset} {path}")
+        if data["installed"]:
+            installed_count += 1
+            
+    print("-" * 72)
+    print(f"Total AI systems detected: {installed_count} of {len(detected)}")
+    print("=" * 72)
+
+if __name__ == "__main__":
+    main()

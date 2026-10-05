@@ -1,0 +1,237 @@
+#!/usr/bin/env python3
+"""
+agent-briefing — Generates the live linear context for all AI agents.
+Maintains ~/ACTIVE_CONTEXT.md and prints a formatted terminal briefing.
+"""
+
+import sys
+import os
+import re
+from pathlib import Path
+from datetime import datetime
+
+HOME = Path.home()
+DESKS_BOARD = HOME / "Projects" / "Desks" / "BOARD.tsv"
+DESKS_CATALOG = HOME / "Projects" / "Desks" / "PROJECTS.tsv"
+MASTER_TODO = HOME / "Notebooks" / "Second Brain" / "Master-Todo.md"
+ACTIVE_CONTEXT_FILE = HOME / "ACTIVE_CONTEXT.md"
+GRAPHIFY_GLOBAL = HOME / ".graphify" / "global-graph.json"
+
+def get_active_desks():
+    desks = []
+    if DESKS_BOARD.exists():
+        with open(DESKS_BOARD, "r", encoding="utf-8", errors="ignore") as f:
+            for line in f:
+                parts = line.strip().split("\t")
+                if len(parts) >= 5:
+                    desks.append({
+                        "task": parts[0],
+                        "agent": parts[1],
+                        "folder": parts[2].replace(str(HOME), "~"),
+                        "desk": parts[3].replace(str(HOME), "~"),
+                        "since": parts[4]
+                    })
+    return desks
+
+def get_master_priorities():
+    priorities = []
+    if MASTER_TODO.exists():
+        with open(MASTER_TODO, "r", encoding="utf-8", errors="ignore") as f:
+            lines = f.readlines()
+        in_section = False
+        section_name = ""
+        for line in lines:
+            if line.startswith("## "):
+                section_name = line.strip().replace("## ", "")
+            elif line.strip().startswith("- [ ]") or line.strip().startswith("- [x]"):
+                item_text = line.strip()[5:].strip()
+                clean_text = re.sub(r"\*\*(.*?)\*\*", r"\1", item_text)
+                clean_text = clean_text.split(".")[0].split("—")[0].strip()
+                is_done = line.strip().startswith("- [x]")
+                if len(priorities) < 8:
+                    priorities.append({
+                        "section": section_name,
+                        "text": clean_text,
+                        "done": is_done
+                    })
+    return priorities
+
+def get_recent_projects():
+    projects = []
+    if DESKS_CATALOG.exists():
+        with open(DESKS_CATALOG, "r", encoding="utf-8", errors="ignore") as f:
+            for line in f:
+                parts = line.strip().split("\t")
+                if len(parts) >= 2:
+                    projects.append({
+                        "name": parts[0],
+                        "folder": parts[1].replace(str(HOME), "~")
+                    })
+    return projects
+
+def build_markdown_context(active_desks, priorities, projects, agent_name=None):
+    now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    agent_header = f"Session initialized for: **{agent_name}**" if agent_name else "Universal Linear Agent Context"
+
+    md = f"""# Active Linear Context & State Briefing
+*Generated automatically at {now_str}. Shared across all AI agents on this machine.*
+{agent_header}
+
+---
+
+## 1. User Working Principles
+- **Role Alignment**: User is the product owner / architect — AI agents are the developers.
+- **Communication Style**: Plain words, direct explanations, short answers. No filler, no sycophancy, no restating requests back.
+- **Pacing**: When walking through instructions: **one step at a time**, then pause and wait for the result.
+- **Ownership & Attribution**: Work and designs belong to the user. **Never** put an AI's name in filenames, author fields, script headers, metadata, or git commits.
+- **Session Reporting**: Every completed run or phase gets a short, structured report:
+  1. What changed
+  2. Where it is located
+  3. What is left to do
+
+---
+
+## 2. Live System Status & Active Desks (`desk list`)
+Before touching any folder or code, agents **must** check `desk list`. If another agent has claimed a folder, do not edit it.
+"""
+    if active_desks:
+        md += "| Task Name | Agent | Location | Mode | Started |\n"
+        md += "| :--- | :--- | :--- | :--- | :--- |\n"
+        for d in active_desks:
+            md += f"| `{d['task']}` | **{d['agent']}** | `{d['folder']}` | {d['desk']} | {d['since']} |\n"
+    else:
+        md += "*No desks currently active on the board.*\n"
+
+    md += """
+### Desk Workflow Rules:
+- **Claim or Fork**: Run `desk start <project> "<task>" <your-agent-name>` before making any changes. Git projects receive a clean private worktree in `~/Projects/Desks/`.
+- **Close Out**: When work is completed and tests pass, commit cleanly and run `desk done <task>`. This automatically merges back and syncs symbols into the central knowledge graph.
+- **Drop**: If abandoning unneeded edits, run `desk drop <task>`.
+
+---
+
+## 3. High-Priority Master To-Do
+"""
+    if priorities:
+        for p in priorities:
+            status = "✓ [DONE]" if p["done"] else "○ [PENDING]"
+            sec = f"({p['section']})" if p['section'] else ""
+            md += f"- {status} {sec} {p['text']}\n"
+    else:
+        md += "- Review master tasks for current items.\n"
+
+    md += """
+---
+
+## 4. Multi-Agent Ecosystem & Delegation Matrix
+Multiple AI agents operate in this workspace. Each specializes in distinct domains:
+
+| Agent / Model | Primary Strengths & Ideal Roles | How to Launch / Hand Off |
+| :--- | :--- | :--- |
+| **Claude Code** | Complex software architecture, large refactors, full-stack systems, SVG/design synthesis | `claude` (reads `CLAUDE.md`, memories in `~/.claude`) |
+| **OpenAI Codex** | Backend algorithms, automated logic, script generation, structured JSON tasks | `codex` (reads `~/.codex/AGENTS.md`) |
+| **Google Gemini** | Massive context ingestion, multi-repository research, multimodal analysis | `gemini` (reads `~/.gemini/GEMINI.md`) |
+| **Hermes Agent** | System orchestration, autonomous daemon routines, desktop tool execution | `hermes` CLI / Hermes Desktop GUI (`~/.hermes`) |
+| **Devin** | Autonomous end-to-end task execution, desktop UI and web workflows | `devin` CLI / Devin Desktop GUI |
+| **OpenCode** | Versatile terminal coding assistant with multi-provider model routing | `opencode` |
+| **Qwen Code** | High-efficiency coding, local VPS inference, quick CLI scripts | `qwen` (reads `~/.qwen/QWEN.md`) |
+| **Kilo** | Rapid prototyping, tool-chaining, desktop control apps | `kilo` |
+| **Cursor IDE** | Interactive visual code editing, side-by-side diff review, live debugging | `cursor` (reads `.cursorrules`) |
+| **OpenClaw** | Sandboxed VM agent for untrusted scrapers, network tools | `claw` (terminal TUI) / `claw-ui` (web dashboard) |
+| **Oracle** | [OFFLINE / DISABLED] Private VPS model disabled (until rehomed) | *Do not query — VPS offline* |
+| **Browser-Use** | Autonomous visual browser navigation, web forms, scraping pipelines | `browser-use-tui` / `browser-use` |
+| **Antigravity** | Visual desktop agent workspace | `antigravity` desktop application |
+| **Cline / Aether** | Autonomous coding agents with auto-approve capabilities | `cline` / `aether` |
+
+---
+
+## 5. Shared Memory & Knowledge Graph
+- **Second Brain (`~/Notebooks/Second Brain/`)**:
+  - `Runs/`: Record completed runs and what they delivered.
+  - `Decisions/`: Record why a technical choice was made so other agents don't second-guess it.
+  - `Knowledge/` & `Systems/`: Document verified operational facts.
+- **Central Knowledge Graph**:
+  - Stored at `~/.graphify/global-graph.json`.
+  - Running `desk done <task>` automatically extracts and updates symbols into the graph.
+
+---
+
+## 6. Linear Continuity Protocol
+To maintain linear continuity across sessions:
+1. **Never reset state**: Read this file (`~/ACTIVE_CONTEXT.md`) and `~/AGENTS.md` before taking action.
+2. **Review prior deliverables**: Inspect recently edited files and commit logs in the target project before proposing new work.
+3. **Carry the baton**: Build directly upon what the previous agent left behind rather than rewriting or re-architecting from scratch.
+4. **Leave clean breadcrumbs**: Conclude with a clear status report detailing what was finished and the single logical next step.
+"""
+    return md
+
+def print_terminal_banner(active_desks, priorities, agent_name="AI Agent"):
+    BOLD = "\033[1m"
+    CYAN = "\033[36m"
+    GREEN = "\033[32m"
+    YELLOW = "\033[33m"
+    MAGENTA = "\033[35m"
+    RESET = "\033[0m"
+    DIM = "\033[2m"
+
+    banner_width = 80
+    border = f"{CYAN}{'═' * banner_width}{RESET}"
+    
+    print(border)
+    print(f" {BOLD}{MAGENTA}⚡ MULTI-AGENT WORKSPACE{RESET}  │  Agent: {BOLD}{GREEN}{agent_name.upper()}{RESET}  │  Mode: {BOLD}Linear Context Session{RESET}")
+    print(border)
+    print(f" {BOLD}Protocol:{RESET} Plain language, 1 step at a time, short reports, no AI attribution")
+    print(f" {BOLD}Shared Rules:{RESET} Read {CYAN}~/AGENTS.md{RESET} & {CYAN}~/ACTIVE_CONTEXT.md{RESET}  │  Always check {YELLOW}desk list{RESET} first")
+    print(f"{DIM}{'─' * banner_width}{RESET}")
+    
+    print(f" {BOLD}Active Desks ({len(active_desks)}):{RESET}")
+    if active_desks:
+        for d in active_desks[:4]:
+            print(f"   {GREEN}▶{RESET} {BOLD}{d['task']}{RESET} [{d['agent']}] → {DIM}{d['folder']}{RESET}")
+        if len(active_desks) > 4:
+            print(f"   {DIM}... and {len(active_desks) - 4} more on the board (see desk list){RESET}")
+    else:
+        print(f"   {DIM}(No desks currently claimed. Use: desk start <project> \"<task>\"){RESET}")
+        
+    print(f"{DIM}{'─' * banner_width}{RESET}")
+    print(f" {BOLD}Immediate Priorities:{RESET}")
+    pending_p = [p for p in priorities if not p["done"]]
+    if pending_p:
+        for p in pending_p[:3]:
+            print(f"   {YELLOW}○{RESET} {p['text']}")
+    else:
+        print(f"   {DIM}(Check master todo list for open items){RESET}")
+        
+    print(f"{DIM}{'─' * banner_width}{RESET}")
+    print(f" {BOLD}Multi-Agent Collaboration:{RESET} Claude · Codex · Gemini · Hermes · Devin · OpenCode · Qwen · Kilo · Cursor · OpenClaw")
+    print(f" {YELLOW}⚠️ Infrastructure Notice:{RESET} VPS is permanently disabled until models are rehoused (Oracle offline)")
+    print(border)
+    print()
+
+def main():
+    agent_name = "AI Agent"
+    quiet = "--quiet" in sys.argv
+    banner_only = "--banner" in sys.argv
+    
+    for arg in sys.argv[1:]:
+        if not arg.startswith("--"):
+            agent_name = arg
+            break
+
+    active_desks = get_active_desks()
+    priorities = get_master_priorities()
+    projects = get_recent_projects()
+
+    if not banner_only:
+        md_content = build_markdown_context(active_desks, priorities, projects, agent_name)
+        try:
+            with open(ACTIVE_CONTEXT_FILE, "w", encoding="utf-8") as f:
+                f.write(md_content)
+        except Exception as e:
+            print(f"Warning: Could not write ACTIVE_CONTEXT.md: {e}", file=sys.stderr)
+
+    if not quiet:
+        print_terminal_banner(active_desks, priorities, agent_name)
+
+if __name__ == "__main__":
+    main()
